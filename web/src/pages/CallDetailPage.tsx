@@ -1,0 +1,133 @@
+import { useEffect, useState } from "react";
+import { Link, useParams } from "react-router-dom";
+import { format } from "date-fns";
+import { ArrowLeft, Copy } from "lucide-react";
+import { toast } from "sonner";
+import { useCall } from "@/lib/queries/calls";
+import { api } from "@/lib/api";
+import { PageHeader } from "@/components/PageHeader";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { DirectionBadge } from "@/components/DirectionBadge";
+import { WaveformPlayer } from "@/components/WaveformPlayer";
+import { formatDuration } from "@/lib/utils";
+
+// Transcript UI is hidden for now — flip to true to bring it back.
+const SHOW_TRANSCRIPT = false;
+
+export function CallDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const { data: call, isLoading } = useCall(id);
+  const [signedUrl, setSignedUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!call?.id || !call.recording_storage_path) {
+      setSignedUrl(null);
+      return;
+    }
+    let cancelled = false;
+    api
+      .get<{ url: string }>(`/v1/dashboard/recordings/sign?call_id=${call.id}`)
+      .then((res) => !cancelled && setSignedUrl(res.url))
+      .catch((e) => toast.error(e.message ?? "Could not load recording"));
+    return () => {
+      cancelled = true;
+    };
+  }, [call?.id, call?.recording_storage_path]);
+
+  if (isLoading || !call) {
+    return (
+      <>
+        <PageHeader title="Call detail" />
+        <div className="p-8">
+          <Skeleton className="h-64 w-full" />
+        </div>
+      </>
+    );
+  }
+
+  async function copyShare() {
+    if (!signedUrl) return;
+    await navigator.clipboard.writeText(signedUrl);
+    toast.success("Share link copied (valid 10 min)");
+  }
+
+  return (
+    <>
+      <PageHeader
+        title={call.phone_number ?? "unknown"}
+        description={format(new Date(call.started_at), "EEE d MMM yyyy, HH:mm")}
+        action={
+          <Button asChild variant="outline" size="sm">
+            <Link to="/calls">
+              <ArrowLeft className="h-4 w-4" /> Back to calls
+            </Link>
+          </Button>
+        }
+      />
+      <div className="grid gap-4 p-8 lg:grid-cols-[2fr_1fr]">
+        <div className="space-y-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
+              <CardTitle>Recording</CardTitle>
+              {signedUrl && (
+                <Button variant="outline" size="sm" onClick={copyShare}>
+                  <Copy className="h-3.5 w-3.5" />
+                  Copy share link
+                </Button>
+              )}
+            </CardHeader>
+            <CardContent>
+              {!call.recording_storage_path ? (
+                <div className="rounded-md border bg-muted/30 p-6 text-sm text-muted-foreground">
+                  No recording attached to this call.
+                </div>
+              ) : !signedUrl ? (
+                <Skeleton className="h-20 w-full" />
+              ) : (
+                <WaveformPlayer url={signedUrl} />
+              )}
+            </CardContent>
+          </Card>
+
+          {SHOW_TRANSCRIPT && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Transcript</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-muted-foreground">
+                  Transcript UI is currently disabled.
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        <Card className="self-start">
+          <CardHeader>
+            <CardTitle>Details</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <DetailRow label="Direction" value={<DirectionBadge direction={call.direction} />} />
+            <DetailRow label="Duration" value={formatDuration(call.duration_sec)} />
+            <DetailRow label="Started" value={format(new Date(call.started_at), "PPpp")} />
+            {call.contact_name && <DetailRow label="Contact" value={call.contact_name} />}
+            <DetailRow label="Device" value={<code className="text-xs">{call.device_id.slice(0, 8)}…</code>} />
+            <DetailRow label="Team member" value={<code className="text-xs">{call.user_id.slice(0, 8)}…</code>} />
+          </CardContent>
+        </Card>
+      </div>
+    </>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 border-b pb-2 last:border-0 last:pb-0">
+      <div className="text-xs uppercase tracking-wide text-muted-foreground">{label}</div>
+      <div>{value}</div>
+    </div>
+  );
+}

@@ -1,0 +1,29 @@
+# Append these two services to hdgebot/docker-compose.prod.yml under the
+# top-level `services:` key. Do not touch the existing `api`, `caddy`, or any
+# other hdgebot service.
+#
+# Assumes this repo is cloned next to hdgebot:
+#   /opt/hdgebot/
+#   /opt/calls.hdgelabs.com/
+# (Adjust `build:` paths if your droplet layout differs.)
+
+  calls-api:
+    build: ../calls.hdgelabs.com/api
+    restart: unless-stopped
+    expose:
+      - "8000"
+    env_file:
+      - ../calls.hdgelabs.com/api/.env.prod
+    depends_on:
+      - calls-redis
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/v1/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+
+  calls-redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    expose:
+      - "6379"

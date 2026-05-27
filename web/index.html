@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/jpeg" href="/hdge-icon.jpg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0a0a0a" />
+    <title>HDGE Calls — call tracking dashboard</title>
+    <meta name="description" content="Track, analyse, and share your team's phone-call recordings and transcripts." />
+    <script>
+      // Apply persisted theme before React mounts so there's no flash.
+      (function () {
+        try {
+          var t = localStorage.getItem("hdge.theme") || "dark";
+          if (t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches)) {
+            document.documentElement.classList.add("dark");
+          }
+        } catch (e) {}
+      })();
+    </script>
+  </head>
+  <body class="bg-background text-foreground antialiased">
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,7 @@
+# Append this block to hdgebot/Caddyfile. Do not modify the existing
+# `api.hdgelabs.com { ... }` block — leave it as-is.
+
+api.calls.hdgelabs.com {
+    encode gzip zstd
+    reverse_proxy calls-api:8000
+}
