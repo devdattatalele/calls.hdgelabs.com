@@ -51,66 +51,71 @@ export function AppShell() {
   }
 
   return (
-    <div className="grid min-h-screen grid-cols-[240px_1fr] bg-background">
-      <aside className="flex flex-col border-r bg-card/40 px-4 py-6">
-        <div className="flex items-center gap-3 px-2">
-          <img
-            src="/hdge-icon.jpg"
-            alt="HDGElabs"
-            className="h-10 w-10 rounded-md object-cover ring-1 ring-border"
-          />
-          <div className="min-w-0">
-            <div className="truncate text-[15px] font-semibold tracking-tight leading-none">
-              HDGElabs
+    <div className="grid h-screen grid-cols-[244px_1fr] overflow-hidden bg-background">
+      <aside className="flex h-screen flex-col overflow-hidden border-r bg-card/40">
+        {/* Header (fixed) */}
+        <div className="shrink-0 px-4 pt-6 pb-3">
+          <div className="flex items-center gap-3 px-1">
+            <img
+              src="/hdge-icon.jpg"
+              alt="HDGElabs"
+              className="h-10 w-10 rounded-md object-cover ring-1 ring-border"
+            />
+            <div className="min-w-0">
+              <div className="truncate text-[15px] font-semibold tracking-tight leading-none">
+                HDGElabs
+              </div>
+              <div className="mt-1 truncate text-[11px] uppercase tracking-[0.18em] text-primary/80 leading-none">
+                HDGEcalls
+              </div>
             </div>
-            <div className="mt-1 truncate text-[11px] uppercase tracking-[0.18em] text-primary/80 leading-none">
-              HDGEcalls
-            </div>
+            <ThemeToggle className="ml-auto" />
           </div>
-          <ThemeToggle className="ml-auto" />
+
+          {company.data?.name && (
+            <div className="mt-3 truncate rounded-md border bg-muted/40 px-2.5 py-1.5 text-xs">
+              <span className="text-muted-foreground">Workspace · </span>
+              <span className="font-medium">{company.data.name}</span>
+              <span className="ml-1.5 text-muted-foreground capitalize">
+                · {company.data.plan ?? "free"}
+              </span>
+            </div>
+          )}
         </div>
 
-        {company.data?.name && (
-          <div className="mt-3 mx-2 truncate rounded-md border bg-muted/40 px-2.5 py-1.5 text-xs">
-            <span className="text-muted-foreground">Workspace · </span>
-            <span className="font-medium">{company.data.name}</span>
-            <span className="ml-2 text-muted-foreground capitalize">
-              · {company.data.plan ?? "free"}
-            </span>
+        {/* Scrollable nav */}
+        <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-2 scrollbar-thin">
+          <Separator className="mb-3" />
+          <nav className="flex flex-col gap-0.5">
+            {NAV.map(({ to, label, icon: Icon }) => (
+              <NavItem key={to} to={to} label={label} icon={<Icon className="h-4 w-4" />} />
+            ))}
+          </nav>
+
+          <div className="mt-5 px-2 text-[11px] font-semibold uppercase tracking-[0.18em] text-muted-foreground">
+            Settings
           </div>
-        )}
-
-        <Separator className="my-5" />
-
-        <nav className="flex flex-col gap-0.5">
-          {NAV.map(({ to, label, icon: Icon }) => (
-            <NavItem key={to} to={to} label={label} icon={<Icon className="h-4 w-4" />} />
-          ))}
-        </nav>
-
-        <div className="mt-6 px-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-          Settings
+          <nav className="mt-1 flex flex-col gap-0.5">
+            {SETTINGS.map(({ to, label, icon: Icon }) => (
+              <NavItem key={to} to={to} label={label} icon={<Icon className="h-4 w-4" />} />
+            ))}
+          </nav>
         </div>
-        <nav className="mt-1 flex flex-col gap-0.5">
-          {SETTINGS.map(({ to, label, icon: Icon }) => (
-            <NavItem key={to} to={to} label={label} icon={<Icon className="h-4 w-4" />} />
-          ))}
-        </nav>
 
-        <div className="mt-auto px-2">
-          <Separator className="my-4" />
+        {/* Footer (fixed) */}
+        <div className="shrink-0 border-t bg-card/40 px-4 py-3">
           <NavItem
             to="/help"
             label="Help & setup"
             icon={<HelpCircle className="h-4 w-4" />}
           />
-          <div className="mt-3 mb-2 truncate text-xs text-muted-foreground">
+          <div className="mt-2 truncate px-2 text-xs text-muted-foreground">
             {user?.email}
           </div>
           <Button
             variant="outline"
             size="sm"
-            className="w-full justify-start"
+            className="mt-2 w-full justify-start"
             onClick={handleSignOut}
           >
             <LogOut className="h-4 w-4" />
@@ -119,7 +124,7 @@ export function AppShell() {
         </div>
       </aside>
 
-      <main className="overflow-auto">
+      <main className="h-screen overflow-y-auto">
         <Outlet />
       </main>
     </div>
