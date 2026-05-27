@@ -4,18 +4,23 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/jpeg" href="/hdge-icon.jpg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#0a0a0a" />
+    <meta name="theme-color" content="#181820" />
     <title>HDGE Calls — call tracking dashboard</title>
     <meta name="description" content="Track, analyse, and share your team's phone-call recordings and transcripts." />
     <script>
-      // Apply persisted theme before React mounts so there's no flash.
+      // Apply theme before React mounts so there's no flash.
+      // Default is ALWAYS dark — only an explicit "light" preference flips it.
       (function () {
         try {
-          var t = localStorage.getItem("hdge.theme") || "dark";
-          if (t === "dark" || (t === "system" && matchMedia("(prefers-color-scheme: dark)").matches)) {
-            document.documentElement.classList.add("dark");
-          }
-        } catch (e) {}
+          var t = localStorage.getItem("hdge.theme");
+          var resolved = "dark";
+          if (t === "light") resolved = "light";
+          else if (t === "system" && matchMedia("(prefers-color-scheme: light)").matches) resolved = "light";
+          if (resolved === "dark") document.documentElement.classList.add("dark");
+          document.documentElement.style.colorScheme = resolved;
+        } catch (e) {
+          document.documentElement.classList.add("dark");
+        }
       })();
     </script>
   </head>
