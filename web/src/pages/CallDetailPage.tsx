@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { DirectionBadge } from "@/components/DirectionBadge";
 import { WaveformPlayer } from "@/components/WaveformPlayer";
+import { ConfidenceBadge, RatingPill } from "@/components/ConfidenceBadge";
 import { formatDuration } from "@/lib/utils";
 
 // Transcript UI is hidden for now — flip to true to bring it back.
@@ -113,7 +114,26 @@ export function CallDetailPage() {
             <DetailRow label="Direction" value={<DirectionBadge direction={call.direction} />} />
             <DetailRow label="Duration" value={formatDuration(call.duration_sec)} />
             <DetailRow label="Started" value={format(new Date(call.started_at), "PPpp")} />
-            {call.contact_name && <DetailRow label="Contact" value={call.contact_name} />}
+            {(call.assigned_contact_name || call.contact_name) && (
+              <DetailRow
+                label="Contact"
+                value={call.assigned_contact_name ?? call.contact_name}
+              />
+            )}
+            {call.assigned_contact_phone && (
+              <DetailRow label="Contact phone" value={call.assigned_contact_phone} />
+            )}
+            <DetailRow label="Rating" value={<RatingPill value={call.rating} />} />
+            <DetailRow
+              label="Confidence"
+              value={<ConfidenceBadge value={call.purchase_confidence} />}
+            />
+            {call.rated_at && (
+              <DetailRow
+                label="Rated at"
+                value={format(new Date(call.rated_at), "MMM d, HH:mm")}
+              />
+            )}
             <DetailRow label="Device" value={<code className="text-xs">{call.device_id.slice(0, 8)}…</code>} />
             <DetailRow label="Team member" value={<code className="text-xs">{call.user_id.slice(0, 8)}…</code>} />
           </CardContent>

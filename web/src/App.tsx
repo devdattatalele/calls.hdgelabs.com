@@ -10,6 +10,7 @@ import { CallsPage } from "@/pages/CallsPage";
 import { RecordingsPage } from "@/pages/RecordingsPage";
 import { CallDetailPage } from "@/pages/CallDetailPage";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
+import { ReportsPage } from "@/pages/ReportsPage";
 import { TeamPage } from "@/pages/TeamPage";
 import { DevicesPage } from "@/pages/DevicesPage";
 import { NumbersPage } from "@/pages/NumbersPage";
@@ -47,6 +48,7 @@ export function App() {
         <Route path="/calls" element={<CallsPage />} />
         <Route path="/calls/:id" element={<CallDetailPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
         <Route path="/team" element={<TeamPage />} />
         <Route path="/devices" element={<DevicesPage />} />
         <Route path="/numbers" element={<NumbersPage />} />

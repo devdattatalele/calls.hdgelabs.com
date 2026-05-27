@@ -44,8 +44,31 @@ export interface CallRow {
   transcript: string | null;
   transcript_segments: TranscriptSegment[] | null;
   transcript_provider: string | null;
+  // Sales feedback (added by HDGEcalls app/0005_call_feedback)
+  rating: number | null;
+  purchase_confidence: number | null;
+  assigned_contact_name: string | null;
+  assigned_contact_phone: string | null;
+  rated_at: string | null;
   created_at: string;
   updated_at: string;
+}
+
+/** Bucket the 1-10 purchase_confidence into one of three labels. */
+export type ConfidenceBucket = "sure" | "mid" | "not_sure";
+
+export function confidenceBucket(c: number | null | undefined): ConfidenceBucket | null {
+  if (c == null) return null;
+  if (c >= 7) return "sure";
+  if (c >= 4) return "mid";
+  return "not_sure";
+}
+
+export function confidenceLabel(b: ConfidenceBucket | null): string {
+  if (b === "sure") return "Sure";
+  if (b === "mid") return "Mid";
+  if (b === "not_sure") return "Not sure";
+  return "—";
 }
 
 export interface TranscriptSegment {

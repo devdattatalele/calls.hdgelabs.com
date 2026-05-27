@@ -100,6 +100,13 @@ class CallOut(BaseModel):
     team_member_id: str
     has_recording: bool
     transcription_status: str
+    # Sales feedback (added by HDGEcalls app)
+    rating: Optional[int] = None
+    purchase_confidence: Optional[int] = None
+    confidence_note: Optional[str] = None  # "sure" | "mid" | "not_sure"
+    assigned_contact_name: Optional[str] = None
+    assigned_contact_phone: Optional[str] = None
+    rated_at: Optional[str] = None
 
 
 class CallDetailOut(CallOut):

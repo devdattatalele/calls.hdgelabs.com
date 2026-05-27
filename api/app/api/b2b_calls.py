@@ -5,8 +5,11 @@ from __future__ import annotations
 from datetime import datetime
 from typing import Optional
 
+import csv
+import io
+from datetime import datetime as _dt
 from fastapi import APIRouter, Depends, HTTPException, Query
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, StreamingResponse
 
 from app.core.config import get_settings
 from app.core.security import ApiKeyAuth, current_api_key
@@ -24,7 +27,18 @@ from app.models.schemas import (
 router = APIRouter(prefix="/v1", tags=["b2b"])
 
 
+def _confidence_note(value: int | None) -> str | None:
+    if value is None:
+        return None
+    if value >= 7:
+        return "sure"
+    if value >= 4:
+        return "mid"
+    return "not_sure"
+
+
 def _row_to_call(r: dict) -> CallOut:
+    conf = r.get("purchase_confidence")
     return CallOut(
         id=r["id"],
         started_at=r["started_at"],
@@ -36,6 +50,12 @@ def _row_to_call(r: dict) -> CallOut:
         team_member_id=r["user_id"],
         has_recording=bool(r.get("recording_storage_path")),
         transcription_status=r.get("transcription_status") or "pending",
+        rating=r.get("rating"),
+        purchase_confidence=conf,
+        confidence_note=_confidence_note(conf),
+        assigned_contact_name=r.get("assigned_contact_name"),
+        assigned_contact_phone=r.get("assigned_contact_phone"),
+        rated_at=r.get("rated_at"),
     )
 
 
@@ -173,6 +193,75 @@ def get_transcript(call_id: str, auth: ApiKeyAuth = Depends(current_api_key)):
         transcript=r.get("transcript"),
         segments=r.get("transcript_segments"),
         provider=r.get("transcript_provider"),
+    )
+
+
+@router.get("/calls.csv")
+def export_calls_csv(
+    auth: ApiKeyAuth = Depends(current_api_key),
+    from_: Optional[str] = Query(None, alias="from"),
+    to: Optional[str] = None,
+    team_member_id: Optional[str] = None,
+    only_rated: bool = False,
+):
+    """Streamed CSV of every call (or rated calls only) for offline analysis."""
+    db = supabase_admin()
+    q = (
+        db.table("calls")
+        .select("*")
+        .eq("company_id", auth.company_id)
+        .order("started_at", desc=True)
+    )
+    if from_:
+        q = q.gte("started_at", from_)
+    if to:
+        q = q.lte("started_at", to)
+    if team_member_id:
+        q = q.eq("user_id", team_member_id)
+    if only_rated:
+        q = q.not_.is_("rating", "null")
+    rows = (q.execute().data) or []
+
+    headers = [
+        "call_id", "started_at", "date", "time", "team_member_id",
+        "contact_name", "phone_number", "direction", "duration_sec", "duration_min",
+        "rating_1_10", "purchase_confidence_1_10", "confidence_note", "rated_at",
+        "has_recording", "transcription_status",
+    ]
+
+    def iter_csv():
+        buf = io.StringIO()
+        w = csv.writer(buf)
+        w.writerow(headers)
+        yield buf.getvalue()
+        buf.seek(0); buf.truncate(0)
+        for r in rows:
+            dt = _dt.fromisoformat(r["started_at"].replace("Z", "+00:00"))
+            conf = r.get("purchase_confidence")
+            w.writerow([
+                r["id"], r["started_at"],
+                dt.strftime("%Y-%m-%d"), dt.strftime("%H:%M:%S"),
+                r["user_id"],
+                r.get("assigned_contact_name") or r.get("contact_name") or "",
+                r.get("assigned_contact_phone") or r.get("phone_number") or "",
+                r.get("direction") or "",
+                r.get("duration_sec") or 0,
+                round((r.get("duration_sec") or 0) / 60, 2),
+                r.get("rating") or "",
+                conf if conf is not None else "",
+                _confidence_note(conf) or "",
+                r.get("rated_at") or "",
+                "yes" if r.get("recording_storage_path") else "no",
+                r.get("transcription_status") or "",
+            ])
+            yield buf.getvalue()
+            buf.seek(0); buf.truncate(0)
+
+    stamp = _dt.utcnow().strftime("%Y-%m-%d_%H%M")
+    return StreamingResponse(
+        iter_csv(),
+        media_type="text/csv",
+        headers={"Content-Disposition": f'attachment; filename="hdge-calls-{stamp}.csv"'},
     )
 
 

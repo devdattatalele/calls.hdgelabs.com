@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { format } from "date-fns";
-import { Mic, Phone } from "lucide-react";
+import { Download, Mic, Phone } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyCompany } from "@/lib/queries/company";
 import { useCalls } from "@/lib/queries/calls";
@@ -13,7 +14,11 @@ import {
 import { UsageDonut } from "@/components/UsageDonut";
 import { PlaybackSheet } from "@/components/PlaybackSheet";
 import { DirectionBadge } from "@/components/DirectionBadge";
+import { ConfidenceBadge, RatingPill } from "@/components/ConfidenceBadge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { confidenceBucket, confidenceLabel } from "@/lib/types";
+import { buildCsv, downloadCsv } from "@/lib/csv";
 import {
   Table,
   TableBody,
@@ -56,11 +61,72 @@ export function RecordingsPage() {
   // dedicated minutes_limit once Polar billing flips the field).
   const limitMinutes = limit;
 
+  function exportCsv() {
+    const rows = (calls.data ?? []).map((c) => {
+      const member = team.data?.find((m) => m.user_id === c.user_id);
+      const bucket = confidenceBucket(c.purchase_confidence);
+      return [
+        c.id,
+        c.started_at,
+        format(new Date(c.started_at), "yyyy-MM-dd"),
+        format(new Date(c.started_at), "HH:mm:ss"),
+        member?.label ?? member?.invited_email ?? "",
+        c.user_id,
+        c.assigned_contact_name ?? c.contact_name ?? "",
+        c.assigned_contact_phone ?? c.phone_number ?? "",
+        c.direction ?? "",
+        c.duration_sec ?? 0,
+        ((c.duration_sec ?? 0) / 60).toFixed(2),
+        c.rating ?? "",
+        c.purchase_confidence ?? "",
+        bucket ? confidenceLabel(bucket).toLowerCase().replace(/\s/g, "_") : "",
+        c.rated_at ? format(new Date(c.rated_at), "yyyy-MM-dd HH:mm:ss") : "",
+        c.recording_storage_path ? "yes" : "no",
+        c.transcription_status,
+      ];
+    });
+    if (rows.length === 0) {
+      toast.info("Nothing to export with the current filters");
+      return;
+    }
+    const csv = buildCsv(
+      [
+        "call_id",
+        "started_at_iso",
+        "date",
+        "time",
+        "team_member_label",
+        "team_member_user_id",
+        "contact_name",
+        "phone_number",
+        "direction",
+        "duration_sec",
+        "duration_min",
+        "rating_1_10",
+        "purchase_confidence_1_10",
+        "confidence_note",
+        "rated_at",
+        "has_recording",
+        "transcription_status",
+      ],
+      rows,
+    );
+    const stamp = format(new Date(), "yyyy-MM-dd_HHmm");
+    downloadCsv(`hdge-calls-${stamp}.csv`, csv);
+    toast.success(`Exported ${rows.length} rows`);
+  }
+
   return (
     <>
       <PageHeader
         title="Manage Call Recordings"
         description="All call recordings synced from your team's phones, with playback, sharing, and filters."
+        action={
+          <Button onClick={exportCsv} variant="outline">
+            <Download className="h-4 w-4" />
+            Export CSV
+          </Button>
+        }
       />
       <div className="space-y-4 p-8">
         <Card>
@@ -87,6 +153,8 @@ export function RecordingsPage() {
                   <TableHead>Phone number</TableHead>
                   <TableHead>Team member</TableHead>
                   <TableHead>Direction</TableHead>
+                  <TableHead>Rating</TableHead>
+                  <TableHead>Confidence</TableHead>
                   <TableHead className="text-right">Duration</TableHead>
                   <TableHead className="text-right">&nbsp;</TableHead>
                 </TableRow>
@@ -123,6 +191,12 @@ export function RecordingsPage() {
                       <TableCell>
                         <DirectionBadge direction={c.direction} />
                       </TableCell>
+                      <TableCell>
+                        <RatingPill value={c.rating} />
+                      </TableCell>
+                      <TableCell>
+                        <ConfidenceBadge value={c.purchase_confidence} compact />
+                      </TableCell>
                       <TableCell className="text-right">{formatDuration(c.duration_sec)}</TableCell>
                       <TableCell className="text-right">
                         <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
@@ -134,7 +208,7 @@ export function RecordingsPage() {
                 })}
                 {!calls.isLoading && !calls.data?.length && (
                   <TableRow>
-                    <TableCell colSpan={6} className="py-10 text-center text-muted-foreground">
+                    <TableCell colSpan={8} className="py-10 text-center text-muted-foreground">
                       No recordings match those filters.
                     </TableCell>
                   </TableRow>

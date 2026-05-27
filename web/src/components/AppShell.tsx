@@ -2,6 +2,7 @@ import { Outlet, NavLink, useNavigate } from "react-router-dom";
 import {
   BarChart3,
   Building2,
+  ClipboardList,
   KeyRound,
   LayoutDashboard,
   LogOut,
@@ -24,6 +25,7 @@ const NAV = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { to: "/recordings", label: "Recordings", icon: Mic },
   { to: "/calls", label: "All calls", icon: PhoneCall },
+  { to: "/reports", label: "Reports", icon: ClipboardList },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },
   { to: "/team", label: "Team", icon: Users },
   { to: "/devices", label: "Devices", icon: Smartphone },
