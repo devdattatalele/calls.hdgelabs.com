@@ -2,15 +2,9 @@ import { useState } from "react";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 import { supabase } from "@/lib/supabase";
-import { AuthLayout, Field } from "@/pages/SignInPage";
+import { AuthShell } from "@/components/AuthShell";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Field } from "@/pages/SignInPage";
 
 export function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
@@ -32,39 +26,30 @@ export function ForgotPasswordPage() {
   }
 
   return (
-    <AuthLayout>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Reset password</CardTitle>
-          <CardDescription>We'll email you a recovery link.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {sent ? (
-            <p className="text-sm text-muted-foreground">
-              If an account exists for that address, a reset link is on the way.
-            </p>
-          ) : (
-            <form className="space-y-4" onSubmit={onSubmit}>
-              <Field
-                id="email"
-                label="Email"
-                type="email"
-                value={email}
-                onChange={setEmail}
-                required
-              />
-              <Button type="submit" className="w-full" disabled={submitting}>
-                {submitting ? "Sending…" : "Send recovery email"}
-              </Button>
-            </form>
-          )}
-          <div className="mt-4 text-center text-sm">
-            <Link to="/signin" className="text-muted-foreground hover:text-foreground">
-              Back to sign in
-            </Link>
-          </div>
-        </CardContent>
-      </Card>
-    </AuthLayout>
+    <AuthShell>
+      <div className="space-y-1.5">
+        <h1 className="text-2xl font-semibold tracking-tight">Reset password</h1>
+        <p className="text-sm text-muted-foreground">We'll email you a recovery link.</p>
+      </div>
+
+      {sent ? (
+        <p className="mt-6 rounded-md border bg-muted/30 p-4 text-sm text-muted-foreground">
+          If an account exists for that address, a reset link is on the way.
+        </p>
+      ) : (
+        <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+          <Field id="email" label="Email" type="email" value={email} onChange={setEmail} required />
+          <Button type="submit" className="w-full" disabled={submitting}>
+            {submitting ? "Sending…" : "Send recovery email"}
+          </Button>
+        </form>
+      )}
+
+      <p className="mt-5 text-center text-sm">
+        <Link to="/signin" className="text-muted-foreground hover:text-foreground">
+          Back to sign in
+        </Link>
+      </p>
+    </AuthShell>
   );
 }

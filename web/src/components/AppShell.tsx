@@ -3,6 +3,7 @@ import {
   BarChart3,
   Building2,
   ClipboardList,
+  HelpCircle,
   KeyRound,
   LayoutDashboard,
   LogOut,
@@ -51,23 +52,33 @@ export function AppShell() {
 
   return (
     <div className="grid min-h-screen grid-cols-[240px_1fr] bg-background">
-      <aside className="flex flex-col border-r bg-background px-4 py-6">
+      <aside className="flex flex-col border-r bg-card/40 px-4 py-6">
         <div className="flex items-center gap-3 px-2">
           <img
             src="/hdge-icon.jpg"
-            alt="HDGE Calls"
-            className="h-9 w-9 rounded-md object-cover ring-1 ring-border"
+            alt="HDGElabs"
+            className="h-10 w-10 rounded-md object-cover ring-1 ring-border"
           />
           <div className="min-w-0">
-            <div className="truncate text-sm font-semibold">
-              {company.data?.name ?? "HDGE Calls"}
+            <div className="truncate text-[15px] font-semibold tracking-tight leading-none">
+              HDGElabs
             </div>
-            <div className="truncate text-xs text-muted-foreground capitalize">
-              {company.data?.plan ?? "free"} plan
+            <div className="mt-1 truncate text-[11px] uppercase tracking-[0.18em] text-primary/80 leading-none">
+              HDGEcalls
             </div>
           </div>
           <ThemeToggle className="ml-auto" />
         </div>
+
+        {company.data?.name && (
+          <div className="mt-3 mx-2 truncate rounded-md border bg-muted/40 px-2.5 py-1.5 text-xs">
+            <span className="text-muted-foreground">Workspace · </span>
+            <span className="font-medium">{company.data.name}</span>
+            <span className="ml-2 text-muted-foreground capitalize">
+              · {company.data.plan ?? "free"}
+            </span>
+          </div>
+        )}
 
         <Separator className="my-5" />
 
@@ -88,7 +99,12 @@ export function AppShell() {
 
         <div className="mt-auto px-2">
           <Separator className="my-4" />
-          <div className="mb-2 truncate text-xs text-muted-foreground">
+          <NavItem
+            to="/help"
+            label="Help & setup"
+            icon={<HelpCircle className="h-4 w-4" />}
+          />
+          <div className="mt-3 mb-2 truncate text-xs text-muted-foreground">
             {user?.email}
           </div>
           <Button

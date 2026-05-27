@@ -5,15 +5,9 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useMyCompany } from "@/lib/queries/company";
 import { supabase } from "@/lib/supabase";
-import { AuthLayout, Field } from "@/pages/SignInPage";
+import { AuthShell } from "@/components/AuthShell";
+import { Field } from "@/pages/SignInPage";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
 
 export function OnboardPage() {
   const { user } = useAuth();
@@ -55,27 +49,29 @@ export function OnboardPage() {
   }
 
   return (
-    <AuthLayout>
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-xl">Tell us about your company</CardTitle>
-          <CardDescription>
-            This is what your team will see inside the HDGEcalls Android app.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form className="space-y-4" onSubmit={onSubmit}>
-            <Field id="name" label="Company name" value={name} onChange={setName} required />
-            <Field id="role" label="Your role" value={role} onChange={setRole} placeholder="e.g. Founder, Operations" />
-            <Field id="size" label="Team size" value={size} onChange={setSize} placeholder="1–10, 11–50, …" />
-            <Field id="website" label="Website" type="url" value={website} onChange={setWebsite} placeholder="https://" />
-            <Field id="industry" label="Industry" value={industry} onChange={setIndustry} />
-            <Button type="submit" className="w-full" disabled={submitting}>
-              {submitting ? "Saving…" : "Continue"}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-    </AuthLayout>
+    <AuthShell
+      pitch={{
+        title: "One last step before your dashboard.",
+        subtitle:
+          "These details show up inside the HDGEcalls Android app and on your B2B partner API responses.",
+      }}
+    >
+      <div className="space-y-1.5">
+        <h1 className="text-2xl font-semibold tracking-tight">Tell us about your company</h1>
+        <p className="text-sm text-muted-foreground">
+          You can change any of this later in Settings.
+        </p>
+      </div>
+      <form className="mt-6 space-y-4" onSubmit={onSubmit}>
+        <Field id="name" label="Company name" value={name} onChange={setName} required />
+        <Field id="role" label="Your role" value={role} onChange={setRole} placeholder="Founder, Operations…" />
+        <Field id="size" label="Team size" value={size} onChange={setSize} placeholder="1–10, 11–50, …" />
+        <Field id="website" label="Website" type="url" value={website} onChange={setWebsite} placeholder="https://" />
+        <Field id="industry" label="Industry" value={industry} onChange={setIndustry} />
+        <Button type="submit" className="w-full" disabled={submitting}>
+          {submitting ? "Saving…" : "Continue"}
+        </Button>
+      </form>
+    </AuthShell>
   );
 }

@@ -11,6 +11,7 @@ import { RecordingsPage } from "@/pages/RecordingsPage";
 import { CallDetailPage } from "@/pages/CallDetailPage";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
 import { ReportsPage } from "@/pages/ReportsPage";
+import { HelpPage } from "@/pages/HelpPage";
 import { TeamPage } from "@/pages/TeamPage";
 import { DevicesPage } from "@/pages/DevicesPage";
 import { NumbersPage } from "@/pages/NumbersPage";
@@ -25,6 +26,7 @@ export function App() {
       <Route path="/signin" element={<SignInPage />} />
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/help" element={<HelpPage />} />
 
       <Route
         path="/onboard"
