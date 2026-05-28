@@ -11,6 +11,7 @@ import {
 } from "@/lib/queries/api-keys";
 import { ApiError } from "@/lib/api";
 import { PageHeader } from "@/components/PageHeader";
+import { ApiDocsDialog } from "@/components/ApiDocsDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Field } from "@/pages/SignInPage";
@@ -77,9 +78,12 @@ export function ApiKeysPage() {
         title="API keys"
         description="Hand out to partners who'll pull your calls + transcripts via the REST API."
         action={
-          <Button onClick={() => { setJustMinted(null); setOpen(true); }}>
-            <Plus className="h-4 w-4" /> New key
-          </Button>
+          <div className="flex items-center gap-2">
+            <ApiDocsDialog />
+            <Button onClick={() => { setJustMinted(null); setOpen(true); }}>
+              <Plus className="h-4 w-4" /> New key
+            </Button>
+          </div>
         }
       />
 
