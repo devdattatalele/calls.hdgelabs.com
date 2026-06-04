@@ -91,7 +91,8 @@ export function RecordingsPage() {
         (c) =>
           selected.has(c.id) &&
           (c.transcription_status === "skipped" ||
-            c.transcription_status === "failed"),
+            c.transcription_status === "failed" ||
+            c.transcription_status === "done"),
       )
       .map((c) => c.id);
   }, [calls.data, selected]);
@@ -307,7 +308,8 @@ export function RecordingsPage() {
                   const member = team.data?.find((m) => m.user_id === c.user_id);
                   const canTranscribe =
                     c.transcription_status === "skipped" ||
-                    c.transcription_status === "failed";
+                    c.transcription_status === "failed" ||
+                    c.transcription_status === "done";
                   return (
                     <TableRow key={c.id} className="cursor-pointer">
                       <TableCell

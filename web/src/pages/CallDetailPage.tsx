@@ -100,7 +100,7 @@ export function CallDetailPage() {
           : status === "failed"
             ? "Retry"
             : "Transcribe";
-  const showTranscribeButton = status !== "done"; // re-transcribe deferred (see backend)
+  const showTranscribeButton = true;
 
   return (
     <>

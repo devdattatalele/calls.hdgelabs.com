@@ -49,7 +49,10 @@ class TranscribeResponse(BaseModel):
     skipped: list[SkippedItem]
 
 
-_ENQUEUABLE_STATUSES = {"skipped", "failed"}
+# 'done' is included so the manager can re-transcribe a bad result (e.g. when
+# we change the Whisper language or model). The worker treats this as a fresh
+# job — the new transcript overwrites the old.
+_ENQUEUABLE_STATUSES = {"skipped", "failed", "done"}
 
 
 @router.post("/transcribe", response_model=TranscribeResponse)
