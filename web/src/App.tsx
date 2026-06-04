@@ -20,6 +20,7 @@ import { CompanySettingsPage } from "@/pages/CompanySettingsPage";
 import { ApiKeysPage } from "@/pages/ApiKeysPage";
 import { ExclusionsPage } from "@/pages/ExclusionsPage";
 import { BillingPage } from "@/pages/BillingPage";
+import { ContactPage } from "@/pages/ContactPage";
 
 export function App() {
   return (
@@ -60,6 +61,7 @@ export function App() {
         <Route path="/settings/api-keys" element={<ApiKeysPage />} />
         <Route path="/settings/exclusions" element={<ExclusionsPage />} />
         <Route path="/settings/billing" element={<BillingPage />} />
+        <Route path="/contact" element={<ContactPage />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/dashboard" replace />} />

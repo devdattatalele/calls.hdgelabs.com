@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ExternalLink, Sparkles } from "lucide-react";
+import { Check, ExternalLink, MessageSquare, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 import { api, ApiError } from "@/lib/api";
 import { PageHeader } from "@/components/PageHeader";
@@ -21,6 +21,7 @@ interface Plan {
   monthly_minutes_limit: number;
   featured: boolean;
   can_purchase: boolean;
+  contact_only?: boolean;
 }
 
 interface BillingSummary {
@@ -177,26 +178,67 @@ export function BillingPage() {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   <div>
-                    <span className="text-3xl font-semibold">${p.price_usd}</span>
-                    <span className="text-sm text-muted-foreground"> / month</span>
+                    {p.contact_only ? (
+                      <>
+                        <span className="text-3xl font-semibold">Custom</span>
+                        <span className="text-sm text-muted-foreground">
+                          {" "}
+                          pricing
+                        </span>
+                      </>
+                    ) : (
+                      <>
+                        <span className="text-3xl font-semibold">
+                          ${p.price_usd}
+                        </span>
+                        <span className="text-sm text-muted-foreground">
+                          {" "}
+                          / month
+                        </span>
+                      </>
+                    )}
                   </div>
                   <ul className="space-y-1.5 text-sm">
-                    <Bullet>
-                      Up to <b>{p.max_team_members}</b> phone user
-                      {p.max_team_members === 1 ? "" : "s"}
-                    </Bullet>
-                    <Bullet>
-                      Up to <b>{p.max_devices}</b> device
-                      {p.max_devices === 1 ? "" : "s"}
-                    </Bullet>
-                    <Bullet>
-                      <b>{p.monthly_minutes_limit.toLocaleString()}</b> minutes / month
-                    </Bullet>
-                    <Bullet>REST API + per-call signed URLs</Bullet>
+                    {p.contact_only ? (
+                      <>
+                        <Bullet>
+                          Starts at <b>{p.monthly_minutes_limit.toLocaleString()}</b>{" "}
+                          minutes / month
+                        </Bullet>
+                        <Bullet>
+                          Team size & device count tailored to you
+                        </Bullet>
+                        <Bullet>Features and SLA discussed 1:1</Bullet>
+                        <Bullet>Dedicated onboarding & support</Bullet>
+                      </>
+                    ) : (
+                      <>
+                        <Bullet>
+                          Up to <b>{p.max_team_members}</b> phone user
+                          {p.max_team_members === 1 ? "" : "s"}
+                        </Bullet>
+                        <Bullet>
+                          Up to <b>{p.max_devices}</b> device
+                          {p.max_devices === 1 ? "" : "s"}
+                        </Bullet>
+                        <Bullet>
+                          <b>{p.monthly_minutes_limit.toLocaleString()}</b>{" "}
+                          minutes / month
+                        </Bullet>
+                        <Bullet>REST API + per-call signed URLs</Bullet>
+                      </>
+                    )}
                   </ul>
                   {active ? (
                     <Button variant="outline" disabled className="w-full">
                       Current plan
+                    </Button>
+                  ) : p.contact_only ? (
+                    <Button asChild className="w-full" variant="default">
+                      <Link to="/contact">
+                        <MessageSquare className="h-4 w-4" />
+                        Contact us
+                      </Link>
                     </Button>
                   ) : p.price_usd === 0 ? (
                     <Button variant="outline" disabled className="w-full">
@@ -219,11 +261,11 @@ export function BillingPage() {
         </div>
 
         <p className="text-xs text-muted-foreground">
-          Need a custom plan or more than 25 users? Contact us at{" "}
-          <a className="underline" href="mailto:hello@hdgelabs.com">
-            hello@hdgelabs.com
-          </a>
-          .
+          Running 10,000+ minutes a month or need bespoke features?{" "}
+          <Link to="/contact" className="underline">
+            Talk to us
+          </Link>{" "}
+          about a custom plan.
         </p>
       </div>
     </>

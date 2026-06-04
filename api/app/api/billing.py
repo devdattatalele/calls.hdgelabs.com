@@ -30,7 +30,12 @@ def list_plans():
             "max_devices": p.max_devices,
             "monthly_minutes_limit": p.monthly_minutes_limit,
             "featured": p.featured,
-            "can_purchase": bool(p.polar_product) or polar.is_mock(),
+            "contact_only": p.contact_only,
+            "can_purchase": (
+                False
+                if p.contact_only
+                else (bool(p.polar_product) or polar.is_mock())
+            ),
         }
         for p in all_plans()
     ]

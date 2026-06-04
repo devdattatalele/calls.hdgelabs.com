@@ -21,12 +21,16 @@ class Plan:
     id: str
     name: str
     tagline: str
-    price_usd: int  # per month
+    price_usd: int  # per month; 0 for custom-priced
     max_team_members: int
     max_devices: int
     monthly_minutes_limit: int
     polar_product: Optional[str] = None
     featured: bool = False
+    # When True, never expose a checkout/upgrade button — the dashboard sends
+    # the user to /contact instead. Used for the Custom plan: bespoke pricing
+    # and feature scope negotiated 1:1 with sales.
+    contact_only: bool = False
 
 
 def all_plans() -> list[Plan]:
@@ -63,14 +67,15 @@ def all_plans() -> list[Plan]:
             polar_product=s.polar_product_growth or None,
         ),
         Plan(
-            id="business",
-            name="Business",
-            tagline="25 users / 25 devices / 25,000 minutes",
-            price_usd=249,
-            max_team_members=25,
-            max_devices=25,
-            monthly_minutes_limit=25000,
-            polar_product=s.polar_product_business or None,
+            id="custom",
+            name="Custom",
+            tagline="Built for your team — pricing & features tailored to you",
+            price_usd=0,
+            max_team_members=10,
+            max_devices=10,
+            monthly_minutes_limit=10000,
+            polar_product=None,
+            contact_only=True,
         ),
     ]
 
