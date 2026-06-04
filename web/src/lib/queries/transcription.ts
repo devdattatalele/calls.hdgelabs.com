@@ -38,3 +38,27 @@ export function useWorkerHealth() {
     staleTime: 15_000,
   });
 }
+
+export function useClearTranscript() {
+  const qc = useQueryClient();
+  return useMutation<{ ok: boolean }, Error, string>({
+    mutationFn: (callId) =>
+      api.post<{ ok: boolean }>(`/v1/dashboard/calls/${callId}/clear-transcript`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["calls"] });
+      qc.invalidateQueries({ queryKey: ["call"] });
+    },
+  });
+}
+
+export function useDeleteCall() {
+  const qc = useQueryClient();
+  return useMutation<{ ok: boolean }, Error, string>({
+    mutationFn: (callId) =>
+      api.delete<{ ok: boolean }>(`/v1/dashboard/calls/${callId}`),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["calls"] });
+      qc.invalidateQueries({ queryKey: ["call"] });
+    },
+  });
+}

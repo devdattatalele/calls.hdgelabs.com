@@ -1,11 +1,22 @@
 import { useEffect, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { ArrowLeft, Copy, FileText, Loader2 } from "lucide-react";
+import {
+  ArrowLeft,
+  Copy,
+  Eraser,
+  FileText,
+  Loader2,
+  Trash2,
+} from "lucide-react";
 import { toast } from "sonner";
 import { useCall } from "@/lib/queries/calls";
-import { useTranscribe } from "@/lib/queries/transcription";
+import {
+  useClearTranscript,
+  useDeleteCall,
+  useTranscribe,
+} from "@/lib/queries/transcription";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -22,7 +33,10 @@ export function CallDetailPage() {
   const { data: call, isLoading } = useCall(id);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
   const transcribe = useTranscribe();
+  const clearTranscript = useClearTranscript();
+  const deleteCall = useDeleteCall();
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   // While a transcription is in flight, poll the call row every 5s so the UI
   // flips pending → processing → done without a manual refresh.
@@ -84,6 +98,32 @@ export function CallDetailPage() {
     );
   }
 
+  function onClearTranscript() {
+    if (!call) return;
+    if (!confirm("Wipe this transcript? You can re-transcribe afterwards.")) return;
+    clearTranscript.mutate(call.id, {
+      onSuccess: () => toast.success("Transcript cleared"),
+      onError: (e) => toast.error(e.message ?? "Could not clear transcript"),
+    });
+  }
+
+  function onDeleteCall() {
+    if (!call) return;
+    if (
+      !confirm(
+        "Delete this call and its recording? This cannot be undone.",
+      )
+    )
+      return;
+    deleteCall.mutate(call.id, {
+      onSuccess: () => {
+        toast.success("Call deleted");
+        navigate("/recordings", { replace: true });
+      },
+      onError: (e) => toast.error(e.message ?? "Could not delete call"),
+    });
+  }
+
   const status = call.transcription_status;
   const transcribeDisabled =
     !call.recording_storage_path ||
@@ -108,11 +148,27 @@ export function CallDetailPage() {
         title={call.phone_number ?? "unknown"}
         description={format(new Date(call.started_at), "EEE d MMM yyyy, HH:mm")}
         action={
-          <Button asChild variant="outline" size="sm">
-            <Link to="/calls">
-              <ArrowLeft className="h-4 w-4" /> Back to calls
-            </Link>
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onDeleteCall}
+              disabled={deleteCall.isPending}
+              className="text-destructive hover:text-destructive"
+            >
+              {deleteCall.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="h-4 w-4" />
+              )}
+              Delete
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/calls">
+                <ArrowLeft className="h-4 w-4" /> Back to calls
+              </Link>
+            </Button>
+          </div>
         }
       />
       <div className="grid gap-4 p-8 lg:grid-cols-[2fr_1fr]">
@@ -159,8 +215,24 @@ export function CallDetailPage() {
 
           {status !== "skipped" && (
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
                 <CardTitle>Transcript</CardTitle>
+                {(status === "done" || status === "failed") && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={onClearTranscript}
+                    disabled={clearTranscript.isPending}
+                    className="text-muted-foreground"
+                  >
+                    {clearTranscript.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <Eraser className="h-3.5 w-3.5" />
+                    )}
+                    Clear
+                  </Button>
+                )}
               </CardHeader>
               <CardContent>
                 <TranscriptView call={call} />

@@ -22,6 +22,7 @@ from typing import Optional
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
+from app.core.config import get_settings
 from app.core.security import Developer, current_developer
 from app.core.supabase_client import supabase_admin
 
@@ -109,6 +110,79 @@ def transcribe(
 
 # In-process cache so a busy dashboard doesn't query Supabase on every tick.
 _health_cache: dict[str, object] = {"at": 0.0, "value": None}
+
+
+@router.post("/calls/{call_id}/clear-transcript")
+def clear_transcript(call_id: str, dev: Developer = Depends(current_developer)):
+    """Reset a call to 'skipped' and wipe its transcript fields.
+
+    Used when the operator wants to re-transcribe from scratch after a bad
+    result (e.g. wrong language detection). Authz: the call must belong to
+    the dev's company.
+    """
+    db = supabase_admin()
+    res = (
+        db.table("calls")
+        .select("id, company_id")
+        .eq("id", call_id)
+        .limit(1)
+        .execute()
+    )
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Call not found")
+    if res.data[0].get("company_id") != dev.company_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    upd = (
+        db.table("calls")
+        .update(
+            {
+                "transcription_status": "skipped",
+                "transcript": None,
+                "transcript_segments": None,
+                "transcript_provider": None,
+            }
+        )
+        .eq("id", call_id)
+        .eq("company_id", dev.company_id)
+        .execute()
+    )
+    if upd.data is None:
+        raise HTTPException(status_code=500, detail="clear-transcript failed")
+    return {"ok": True}
+
+
+@router.delete("/calls/{call_id}")
+def delete_call(call_id: str, dev: Developer = Depends(current_developer)):
+    """Delete a call row + its recording object in storage. Idempotent for
+    the storage half — a missing object is not an error."""
+    settings = get_settings()
+    db = supabase_admin()
+
+    res = (
+        db.table("calls")
+        .select("id, company_id, recording_storage_path")
+        .eq("id", call_id)
+        .limit(1)
+        .execute()
+    )
+    if not res.data:
+        raise HTTPException(status_code=404, detail="Call not found")
+    row = res.data[0]
+    if row.get("company_id") != dev.company_id:
+        raise HTTPException(status_code=403, detail="Forbidden")
+
+    storage_path = row.get("recording_storage_path")
+    if storage_path:
+        try:
+            db.storage.from_(settings.recordings_bucket).remove([storage_path])
+        except Exception:
+            # Best-effort — proceed with row delete even if storage removal
+            # races / file already gone. Orphan cleanup can be a separate job.
+            pass
+
+    db.table("calls").delete().eq("id", call_id).eq("company_id", dev.company_id).execute()
+    return {"ok": True}
 
 
 @router.get("/transcribe/health")
