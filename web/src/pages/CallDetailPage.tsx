@@ -1,9 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { ArrowLeft, Copy } from "lucide-react";
+import { ArrowLeft, Copy, FileText, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useCall } from "@/lib/queries/calls";
+import { useTranscribe } from "@/lib/queries/transcription";
 import { api } from "@/lib/api";
 import { PageHeader } from "@/components/PageHeader";
 import { Button } from "@/components/ui/button";
@@ -12,15 +14,29 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DirectionBadge } from "@/components/DirectionBadge";
 import { WaveformPlayer } from "@/components/WaveformPlayer";
 import { ConfidenceBadge, RatingPill } from "@/components/ConfidenceBadge";
+import { TranscriptView } from "@/components/TranscriptView";
 import { formatDuration } from "@/lib/utils";
-
-// Transcript UI is hidden for now — flip to true to bring it back.
-const SHOW_TRANSCRIPT = false;
 
 export function CallDetailPage() {
   const { id } = useParams<{ id: string }>();
   const { data: call, isLoading } = useCall(id);
   const [signedUrl, setSignedUrl] = useState<string | null>(null);
+  const transcribe = useTranscribe();
+  const qc = useQueryClient();
+
+  // While a transcription is in flight, poll the call row every 5s so the UI
+  // flips pending → processing → done without a manual refresh.
+  useEffect(() => {
+    if (!call?.id) return;
+    const live =
+      call.transcription_status === "pending" ||
+      call.transcription_status === "processing";
+    if (!live) return;
+    const t = setInterval(() => {
+      qc.invalidateQueries({ queryKey: ["call", call.id] });
+    }, 5000);
+    return () => clearInterval(t);
+  }, [call?.id, call?.transcription_status, qc]);
 
   useEffect(() => {
     if (!call?.id || !call.recording_storage_path) {
@@ -54,6 +70,38 @@ export function CallDetailPage() {
     toast.success("Share link copied (valid 10 min)");
   }
 
+  function onTranscribe() {
+    if (!call) return;
+    transcribe.mutate(
+      { call_ids: [call.id] },
+      {
+        onSuccess: (resp) => {
+          if (resp.queued > 0) toast.success("Transcription queued");
+          else if (resp.skipped[0]) toast.info(`Skipped: ${resp.skipped[0].reason}`);
+        },
+        onError: (e) => toast.error(e.message ?? "Could not queue transcription"),
+      },
+    );
+  }
+
+  const status = call.transcription_status;
+  const transcribeDisabled =
+    !call.recording_storage_path ||
+    status === "pending" ||
+    status === "processing" ||
+    transcribe.isPending;
+  const transcribeLabel =
+    status === "pending"
+      ? "Queued…"
+      : status === "processing"
+        ? "Transcribing…"
+        : status === "done"
+          ? "Re-transcribe"
+          : status === "failed"
+            ? "Retry"
+            : "Transcribe";
+  const showTranscribeButton = status !== "done"; // re-transcribe deferred (see backend)
+
   return (
     <>
       <PageHeader
@@ -72,12 +120,29 @@ export function CallDetailPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
               <CardTitle>Recording</CardTitle>
-              {signedUrl && (
-                <Button variant="outline" size="sm" onClick={copyShare}>
-                  <Copy className="h-3.5 w-3.5" />
-                  Copy share link
-                </Button>
-              )}
+              <div className="flex items-center gap-2">
+                {showTranscribeButton && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={onTranscribe}
+                    disabled={transcribeDisabled}
+                  >
+                    {status === "pending" || status === "processing" || transcribe.isPending ? (
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                    ) : (
+                      <FileText className="h-3.5 w-3.5" />
+                    )}
+                    {transcribeLabel}
+                  </Button>
+                )}
+                {signedUrl && (
+                  <Button variant="outline" size="sm" onClick={copyShare}>
+                    <Copy className="h-3.5 w-3.5" />
+                    Copy share link
+                  </Button>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
               {!call.recording_storage_path ? (
@@ -92,15 +157,13 @@ export function CallDetailPage() {
             </CardContent>
           </Card>
 
-          {SHOW_TRANSCRIPT && (
+          {status !== "skipped" && (
             <Card>
               <CardHeader>
                 <CardTitle>Transcript</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-sm text-muted-foreground">
-                  Transcript UI is currently disabled.
-                </div>
+                <TranscriptView call={call} />
               </CardContent>
             </Card>
           )}

@@ -3,6 +3,7 @@ import {
   BarChart3,
   Building2,
   ClipboardList,
+  FileText,
   HelpCircle,
   KeyRound,
   LayoutDashboard,
@@ -25,6 +26,7 @@ import { ThemeToggle } from "@/components/ThemeToggle";
 const NAV = [
   { to: "/dashboard", label: "Overview", icon: LayoutDashboard },
   { to: "/recordings", label: "Recordings", icon: Mic },
+  { to: "/transcripts", label: "Transcripts", icon: FileText },
   { to: "/calls", label: "All calls", icon: PhoneCall },
   { to: "/reports", label: "Reports", icon: ClipboardList },
   { to: "/analytics", label: "Analytics", icon: BarChart3 },

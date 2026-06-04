@@ -9,6 +9,7 @@ import { DashboardPage } from "@/pages/DashboardPage";
 import { CallsPage } from "@/pages/CallsPage";
 import { RecordingsPage } from "@/pages/RecordingsPage";
 import { CallDetailPage } from "@/pages/CallDetailPage";
+import { TranscriptsPage } from "@/pages/TranscriptsPage";
 import { AnalyticsPage } from "@/pages/AnalyticsPage";
 import { ReportsPage } from "@/pages/ReportsPage";
 import { HelpPage } from "@/pages/HelpPage";
@@ -47,6 +48,7 @@ export function App() {
         <Route path="/" element={<Navigate to="/dashboard" replace />} />
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/recordings" element={<RecordingsPage />} />
+        <Route path="/transcripts" element={<TranscriptsPage />} />
         <Route path="/calls" element={<CallsPage />} />
         <Route path="/calls/:id" element={<CallDetailPage />} />
         <Route path="/analytics" element={<AnalyticsPage />} />

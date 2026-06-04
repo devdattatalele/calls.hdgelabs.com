@@ -10,6 +10,7 @@ from app.api import (
     keys,
     recordings,
     team,
+    transcription,
 )
 from app.core.config import get_settings
 
@@ -43,6 +44,7 @@ def health():
 
 app.include_router(dashboard.router)
 app.include_router(recordings.router)
+app.include_router(transcription.router)
 app.include_router(team.router)
 app.include_router(keys.router)
 app.include_router(billing.router)
