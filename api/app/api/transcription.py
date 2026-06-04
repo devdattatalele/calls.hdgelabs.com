@@ -5,22 +5,20 @@ The local Whisper worker (HDGEcalls app/tools/local-transcriber) polls
 router gives the dashboard two things:
 
 - POST /v1/dashboard/transcribe   — enqueue selected calls (flip to 'pending').
-- GET  /v1/dashboard/transcribe/health — proxy the worker's /status so the UI
-                                          can show "Transcriber online".
+- GET  /v1/dashboard/transcribe/health — return the worker's liveness, sourced
+                                          from public.transcriber_status (the
+                                          worker upserts its heartbeat there).
 
-The worker itself is reached through a Cloudflare Tunnel at
-transcribe.calls.hdgelabs.com (see docs/cloudflared-transcriber.md). The
-tunnel is optional — its absence only hides the status pill; transcription
-still runs.
+The heartbeat path means the dashboard never needs a network route into the
+Mac — Supabase is the meeting point both sides already have credentials for.
 """
 
 from __future__ import annotations
 
-import os
 import time
+from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-import httpx
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, Field
 
@@ -31,12 +29,10 @@ from app.core.supabase_client import supabase_admin
 router = APIRouter(prefix="/v1/dashboard", tags=["dashboard"])
 
 
-WORKER_HEALTH_URL = os.getenv(
-    "TRANSCRIBER_HEALTH_URL",
-    "https://transcribe.calls.hdgelabs.com/status",
-)
-WORKER_HEALTH_TIMEOUT_SEC = float(os.getenv("TRANSCRIBER_HEALTH_TIMEOUT_SEC", "2.0"))
-WORKER_HEALTH_CACHE_SEC = float(os.getenv("TRANSCRIBER_HEALTH_CACHE_SEC", "10"))
+# A heartbeat older than this is "stale" → pill goes red even though a row
+# exists. Worker heartbeats once per pass (3–10 s), so 90 s is generous.
+HEARTBEAT_STALE_SEC = 90
+HEALTH_CACHE_SEC = 5
 
 
 class TranscribeRequest(BaseModel):
@@ -64,14 +60,10 @@ def transcribe(
     """Flip selected calls to transcription_status='pending'.
 
     Authz: each call must belong to the developer's company AND have a
-    recording attached AND currently be in 'skipped' or 'failed' state. Rows
-    already 'pending'/'processing'/'done' are reported in `skipped` so the UI
-    can explain. We never bump a 'done' row back to 'pending' from this path
-    — re-transcription is a separate explicit action (TODO when needed).
+    recording attached AND currently be in 'skipped' or 'failed' state.
     """
     db = supabase_admin()
 
-    # Fetch all referenced rows in one query, scoped to the dev's company.
     res = (
         db.table("calls")
         .select("id, company_id, recording_storage_path, transcription_status")
@@ -107,32 +99,62 @@ def transcribe(
             .execute()
         )
         if upd.data is None:
-            # Supabase python client returns data=None on RPC-level failures.
             raise HTTPException(status_code=500, detail="enqueue update failed")
 
     return TranscribeResponse(queued=len(queue), skipped=skipped)
 
 
-# In-process cache so a busy dashboard doesn't hammer the tunnel.
+# In-process cache so a busy dashboard doesn't query Supabase on every tick.
 _health_cache: dict[str, object] = {"at": 0.0, "value": None}
 
 
 @router.get("/transcribe/health")
 def transcribe_health(_: Developer = Depends(current_developer)):
-    """Proxy the worker's /status (via Cloudflare Tunnel) with a 10 s cache."""
+    """Report the most recent worker heartbeat from public.transcriber_status.
+
+    Anyone with a dashboard JWT can see this — it's per-account but the worker
+    is global to the platform (single Mac, all customers), so leaking presence
+    is harmless. We never expose the SUPABASE_SERVICE_ROLE_KEY or the worker's
+    network address.
+    """
     now = time.monotonic()
     cached_at = float(_health_cache.get("at", 0.0))  # type: ignore[arg-type]
-    if _health_cache.get("value") is not None and now - cached_at < WORKER_HEALTH_CACHE_SEC:
+    if _health_cache.get("value") is not None and now - cached_at < HEALTH_CACHE_SEC:
         return _health_cache["value"]
 
-    try:
-        resp = httpx.get(WORKER_HEALTH_URL, timeout=WORKER_HEALTH_TIMEOUT_SEC)
-        if resp.status_code == 200:
-            payload = resp.json()
-        else:
-            payload = {"ok": False, "reason": f"http_{resp.status_code}"}
-    except Exception as exc:  # noqa: BLE001 - opaque to clients
-        payload = {"ok": False, "reason": "unreachable", "error": str(exc)[:200]}
+    db = supabase_admin()
+    res = (
+        db.table("transcriber_status")
+        .select(
+            "worker_id, provider, started_at, last_heartbeat, last_pass_at,"
+            " jobs_in_flight, jobs_done_today, jobs_failed_today, last_error"
+        )
+        .order("last_heartbeat", desc=True)
+        .limit(1)
+        .execute()
+    )
+    rows = res.data or []
+
+    payload: dict[str, object]
+    if not rows:
+        payload = {"ok": False, "reason": "no_worker_yet"}
+    else:
+        row = rows[0]
+        last_hb_str = row.get("last_heartbeat")
+        try:
+            last_hb = datetime.fromisoformat(str(last_hb_str).replace("Z", "+00:00"))
+        except Exception:
+            last_hb = None
+        age_sec: Optional[float] = None
+        if last_hb is not None:
+            age_sec = (datetime.now(timezone.utc) - last_hb).total_seconds()
+        stale = age_sec is None or age_sec > HEARTBEAT_STALE_SEC
+        payload = {
+            "ok": not stale,
+            "reason": "stale" if stale else None,
+            "age_sec": age_sec,
+            **row,
+        }
 
     _health_cache["at"] = now
     _health_cache["value"] = payload
