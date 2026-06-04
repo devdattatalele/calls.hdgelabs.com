@@ -30,7 +30,10 @@ export function TranscriptView({ call }: { call: CallRow }) {
           </div>
           <div className="flex-1">
             {s.speaker !== undefined && (
-              <Badge variant="outline" className="mr-2 mb-1">
+              <Badge
+                variant="outline"
+                className={`mr-2 mb-1 ${speakerColor(s.speaker)}`}
+              >
                 Speaker {s.speaker}
               </Badge>
             )}
@@ -45,4 +48,14 @@ export function TranscriptView({ call }: { call: CallRow }) {
       )}
     </div>
   );
+}
+
+// Two-tone tinting so consecutive turns are visually distinguishable. We map
+// the speaker id (string or number) to a stable colour by parity.
+function speakerColor(id: string | number): string {
+  const n = typeof id === "number" ? id : parseInt(String(id), 10);
+  const even = Number.isFinite(n) ? n % 2 === 0 : id.toString().charCodeAt(0) % 2 === 0;
+  return even
+    ? "border-sky-500/40 text-sky-700 dark:text-sky-300"
+    : "border-amber-500/40 text-amber-700 dark:text-amber-300";
 }
