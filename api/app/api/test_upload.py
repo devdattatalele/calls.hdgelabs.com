@@ -107,7 +107,10 @@ async def test_upload(
                 "duration_sec": 0,
                 "recording_storage_path": storage_path,
                 "recording_mime": file.content_type or "audio/wav",
-                "recording_source": "dashboard_test",
+                # 'manual_share' is the closest existing value in the
+                # calls_recording_source_check constraint. Semantically the
+                # manager is sharing the file by hand here too.
+                "recording_source": "manual_share",
                 "transcription_status": "pending",
             }
         )
