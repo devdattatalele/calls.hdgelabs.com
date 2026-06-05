@@ -1,22 +1,41 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { CallRow, TranscriptSegment } from "@/lib/types";
 import { formatDuration } from "@/lib/utils";
 
+type View = "roman" | "mixed" | "english";
+
 /**
- * Two-layer transcript renderer:
- *   - Roman (Layer 1) — the IndicConformer ASR output transliterated to
- *     Roman script. Preserves Marathi/Hindi flavour ("halo halo ha mi
- *     bolato ki apanating karuya").
- *   - English (Layer 2) — IndicTrans2 translation of the same audio
- *     ("Hello hello, I'm telling you...").
+ * Three-layer transcript renderer for the same audio:
  *
- * Tabs at the top let the reviewer flip between the two without losing
- * timeline context.
+ *   Roman   — IndicConformer ASR transliterated to Roman.
+ *             Best Marathi/Hindi accuracy, drops English code-switches.
+ *   Mixed   — whisper.cpp ASR (code-switched Hinglish).
+ *             Preserves English words like "meeting", "UI", "system"; less
+ *             accurate on pure Indic.
+ *   English — IndicTrans2 translation of the Roman layer.
+ *             Comprehension-friendly summary for non-Indic readers.
+ *
+ * Tabs auto-fall back to whichever layer has content. The tab itself is
+ * disabled (greyed) when its layer is empty so the manager isn't tricked
+ * into clicking a blank panel.
  */
 export function TranscriptView({ call }: { call: CallRow }) {
-  const [view, setView] = useState<"roman" | "english">("roman");
+  const hasRoman = !!(call.transcript && call.transcript.trim());
+  const hasMixed = !!(call.transcript_mixed && call.transcript_mixed.trim());
+  const hasEnglish = !!(call.transcript_english && call.transcript_english.trim());
+
+  const defaultView: View = hasRoman ? "roman" : hasMixed ? "mixed" : "english";
+  const [view, setView] = useState<View>(defaultView);
+
+  // If a call finishes processing while the user is on this view, switch
+  // to the default once data lands rather than stay on an empty tab.
+  useEffect(() => {
+    if (view === "roman" && !hasRoman) setView(defaultView);
+    if (view === "mixed" && !hasMixed) setView(defaultView);
+    if (view === "english" && !hasEnglish) setView(defaultView);
+  }, [view, hasRoman, hasMixed, hasEnglish, defaultView]);
 
   if (call.transcription_status !== "done") {
     return (
@@ -26,12 +45,7 @@ export function TranscriptView({ call }: { call: CallRow }) {
     );
   }
 
-  const segments = call.transcript_segments ?? [];
-  const hasRoman = !!(call.transcript && call.transcript.trim());
-  const hasEnglish = !!(call.transcript_english && call.transcript_english.trim());
-
-  // If neither layer has anything to render, show an empty-state.
-  if (!hasRoman && !hasEnglish) {
+  if (!hasRoman && !hasMixed && !hasEnglish) {
     return (
       <div className="rounded-md border bg-muted/30 p-6 text-sm text-muted-foreground">
         No transcript text.
@@ -39,8 +53,7 @@ export function TranscriptView({ call }: { call: CallRow }) {
     );
   }
 
-  // The active layer falls back to whichever is available.
-  const showEnglish = view === "english" && hasEnglish;
+  const segments = call.transcript_segments ?? [];
 
   return (
     <div className="space-y-3">
@@ -50,15 +63,23 @@ export function TranscriptView({ call }: { call: CallRow }) {
             active={view === "roman"}
             disabled={!hasRoman}
             onClick={() => setView("roman")}
-            title="Original speech, transliterated to Roman script"
+            title="Native-script ASR transliterated to Roman — best on Indian languages, drops English code-switches"
           >
             Roman
+          </TabButton>
+          <TabButton
+            active={view === "mixed"}
+            disabled={!hasMixed}
+            onClick={() => setView("mixed")}
+            title="Code-switched Hinglish transcript — preserves English words like 'meeting', 'UI'"
+          >
+            Mixed
           </TabButton>
           <TabButton
             active={view === "english"}
             disabled={!hasEnglish}
             onClick={() => setView("english")}
-            title="Translated to English"
+            title="Translated to proper English — comprehension-friendly summary"
           >
             English
           </TabButton>
@@ -70,10 +91,10 @@ export function TranscriptView({ call }: { call: CallRow }) {
         )}
       </div>
 
-      {showEnglish ? (
-        <div className="whitespace-pre-wrap rounded-md border bg-card p-4 text-sm leading-6">
-          {call.transcript_english}
-        </div>
+      {view === "english" && hasEnglish ? (
+        <PlainBlock text={call.transcript_english!} />
+      ) : view === "mixed" && hasMixed ? (
+        <PlainBlock text={call.transcript_mixed!} />
       ) : segments.length > 0 ? (
         <div className="space-y-2 rounded-md border bg-card p-4">
           {segments.map((s: TranscriptSegment, i) => (
@@ -96,17 +117,28 @@ export function TranscriptView({ call }: { call: CallRow }) {
           ))}
         </div>
       ) : (
-        <div className="whitespace-pre-wrap rounded-md border bg-card p-4 text-sm leading-6">
-          {call.transcript}
-        </div>
+        <PlainBlock text={call.transcript ?? ""} />
       )}
 
-      {hasRoman && hasEnglish && (
-        <div className="text-xs text-muted-foreground">
-          Switch tabs to compare the source-language transcript with the
-          English translation. Both are derived from the same audio.
-        </div>
-      )}
+      <p className="text-xs text-muted-foreground">
+        {layerTip(view)}
+      </p>
+    </div>
+  );
+}
+
+function layerTip(view: View): string {
+  if (view === "roman")
+    return "Romanised native-script ASR. Best for Indic accuracy; English words may be dropped or phonetically approximated.";
+  if (view === "mixed")
+    return "Code-switched ASR. Preserves English words ('meeting', 'UI', 'system'); less accurate on pure Indic.";
+  return "Machine translation to English. Cleaner reading; specific Indic phrasing may be smoothed away.";
+}
+
+function PlainBlock({ text }: { text: string }) {
+  return (
+    <div className="whitespace-pre-wrap rounded-md border bg-card p-4 text-sm leading-6">
+      {text}
     </div>
   );
 }
