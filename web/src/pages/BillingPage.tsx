@@ -202,14 +202,18 @@ export function BillingPage() {
                     {p.contact_only ? (
                       <>
                         <Bullet>
-                          Starts at <b>{p.monthly_minutes_limit.toLocaleString()}</b>{" "}
-                          minutes / month
+                          Pick your number of phone users and devices
                         </Bullet>
                         <Bullet>
-                          Team size & device count tailored to you
+                          Pick your monthly minutes — typically{" "}
+                          <b>{p.monthly_minutes_limit.toLocaleString()}+</b>
                         </Bullet>
-                        <Bullet>Features and SLA discussed 1:1</Bullet>
-                        <Bullet>Dedicated onboarding & support</Bullet>
+                        <Bullet>
+                          <b>Same per-minute / per-user rate</b> as Starter & Growth
+                        </Bullet>
+                        <Bullet>
+                          Everything in Growth (REST API, signed URLs, exports)
+                        </Bullet>
                       </>
                     ) : (
                       <>

@@ -69,7 +69,7 @@ def all_plans() -> list[Plan]:
         Plan(
             id="custom",
             name="Custom",
-            tagline="Built for your team — pricing & features tailored to you",
+            tagline="Pick your minutes and users — billed at the same rate as Starter / Growth",
             price_usd=0,
             max_team_members=10,
             max_devices=10,
