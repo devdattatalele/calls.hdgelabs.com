@@ -42,6 +42,7 @@ export interface CallRow {
   recording_source: "auto" | "manual_share" | null;
   transcription_status: TranscriptionStatus;
   transcript: string | null;
+  transcript_english: string | null;
   transcript_segments: TranscriptSegment[] | null;
   transcript_provider: string | null;
   // Sales feedback (added by HDGEcalls app/0005_call_feedback)
