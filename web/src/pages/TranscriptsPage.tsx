@@ -1,12 +1,15 @@
-import { useEffect, useMemo } from "react";
-import { Link } from "react-router-dom";
+import { useEffect, useMemo, useRef } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
-import { FileText, Loader2, Phone } from "lucide-react";
+import { FileText, Loader2, Phone, Upload } from "lucide-react";
+import { toast } from "sonner";
 import { useCalls } from "@/lib/queries/calls";
+import { useTestUpload } from "@/lib/queries/transcription";
 import { PageHeader } from "@/components/PageHeader";
 import { WorkerStatusPill } from "@/components/WorkerStatusPill";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Table,
@@ -27,6 +30,24 @@ import { formatDuration } from "@/lib/utils";
 export function TranscriptsPage() {
   const all = useCalls({ hasRecording: true }, 500);
   const qc = useQueryClient();
+  const upload = useTestUpload();
+  const navigate = useNavigate();
+  const fileInput = useRef<HTMLInputElement | null>(null);
+
+  function onChooseFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0];
+    e.target.value = ""; // allow re-selecting the same file later
+    if (!f) return;
+    upload.mutate(f, {
+      onSuccess: (resp) => {
+        toast.success(`Queued "${resp.filename}" — opening details…`);
+        // Navigate to the call detail so the manager can watch
+        // pending → processing → done live.
+        navigate(`/calls/${resp.call_id}`);
+      },
+      onError: (err) => toast.error(err.message ?? "Upload failed"),
+    });
+  }
 
   const inProgress = useMemo(
     () =>
@@ -65,7 +86,31 @@ export function TranscriptsPage() {
       <PageHeader
         title="Transcripts"
         description="Queue and history for on-demand call transcription."
-        action={<WorkerStatusPill />}
+        action={
+          <div className="flex items-center gap-3">
+            <input
+              ref={fileInput}
+              type="file"
+              accept="audio/*,video/mp4,.amr,.3gp,.opus,.aac,.m4a,.mp3,.wav,.ogg,.flac"
+              className="hidden"
+              onChange={onChooseFile}
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={upload.isPending}
+              onClick={() => fileInput.current?.click()}
+            >
+              {upload.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Upload className="h-4 w-4" />
+              )}
+              {upload.isPending ? "Uploading…" : "Upload recording"}
+            </Button>
+            <WorkerStatusPill />
+          </div>
+        }
       />
       <div className="space-y-6 p-8">
         <Card>

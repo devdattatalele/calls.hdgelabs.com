@@ -62,3 +62,25 @@ export function useDeleteCall() {
     },
   });
 }
+
+export interface TestUploadResponse {
+  call_id: string;
+  storage_path: string;
+  filename: string;
+  size_bytes: number;
+}
+
+export function useTestUpload() {
+  const qc = useQueryClient();
+  return useMutation<TestUploadResponse, Error, File>({
+    mutationFn: async (file) => {
+      const form = new FormData();
+      form.append("file", file, file.name);
+      return api.upload<TestUploadResponse>(
+        "/v1/dashboard/test-upload",
+        form,
+      );
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["calls"] }),
+  });
+}

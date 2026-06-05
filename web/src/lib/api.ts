@@ -61,4 +61,10 @@ export const api = {
   post: <T>(path: string, json?: unknown) =>
     request<T>(path, { method: "POST", json }),
   delete: <T>(path: string) => request<T>(path, { method: "DELETE" }),
+  /**
+   * Multipart upload. `FormData` is passed straight to fetch — we don't set
+   * the `Content-Type` header so the browser picks the boundary itself.
+   */
+  upload: <T>(path: string, form: FormData) =>
+    request<T>(path, { method: "POST", body: form }),
 };
