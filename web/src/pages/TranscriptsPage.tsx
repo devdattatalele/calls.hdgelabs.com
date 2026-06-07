@@ -176,7 +176,6 @@ function CallsTable({ rows, emptyText }: { rows: CallRow[]; emptyText: string })
           <TableHead>When</TableHead>
           <TableHead>Phone number</TableHead>
           <TableHead>Status</TableHead>
-          <TableHead>Provider</TableHead>
           <TableHead className="text-right">Duration</TableHead>
         </TableRow>
       </TableHeader>
@@ -198,9 +197,6 @@ function CallsTable({ rows, emptyText }: { rows: CallRow[]; emptyText: string })
             </TableCell>
             <TableCell>
               <StatusBadge status={c.transcription_status} />
-            </TableCell>
-            <TableCell className="text-xs text-muted-foreground">
-              {c.transcript_provider ?? "—"}
             </TableCell>
             <TableCell className="text-right">
               {formatDuration(c.duration_sec)}
