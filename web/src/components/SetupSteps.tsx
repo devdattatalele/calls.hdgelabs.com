@@ -1,7 +1,7 @@
 import { Download, ExternalLink, Mail, PhoneCall, UserPlus } from "lucide-react";
 
 const APK_URL =
-  import.meta.env.VITE_APK_URL ?? "/downloads/HDGEcalls-0.2.0.apk";
+  import.meta.env.VITE_APK_URL ?? "/downloads/HDGEcalls-v8.apk";
 
 const STEPS: {
   title: string;

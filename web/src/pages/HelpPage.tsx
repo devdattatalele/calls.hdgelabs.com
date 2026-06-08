@@ -16,14 +16,14 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 const APK_URL =
-  import.meta.env.VITE_APK_URL ?? "/downloads/HDGEcalls-0.2.0.apk";
+  import.meta.env.VITE_APK_URL ?? "/downloads/HDGEcalls-v8.apk";
 
 const STEPS = [
   {
     icon: Download,
     title: "Get the Android app",
     body: "Download the latest APK and install on every phone you want to capture calls from.",
-    action: { href: APK_URL, label: "Download HDGEcalls v0.2.0", external: true },
+    action: { href: APK_URL, label: "Download HDGEcalls v8", external: true },
   },
   {
     icon: UserPlus,
