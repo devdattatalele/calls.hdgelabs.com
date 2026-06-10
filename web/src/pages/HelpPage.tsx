@@ -15,11 +15,12 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
-// Always points at the latest GitHub Release asset (workflow uploads both
-// HDGEcalls-vX.Y.Z.apk and a stable HDGEcalls-latest.apk on every release).
+// Always points at the latest GitHub Release asset on the PUBLIC
+// releases-only repo (source code stays private; APKs are mirrored to
+// HDGEcalls-releases so anonymous testers can download without a login).
 const APK_URL =
   import.meta.env.VITE_APK_URL ??
-  "https://github.com/devdattatalele/HDGEcalls-App/releases/latest/download/HDGEcalls-latest.apk";
+  "https://github.com/devdattatalele/HDGEcalls-releases/releases/latest/download/HDGEcalls-latest.apk";
 
 const STEPS = [
   {

@@ -5,7 +5,7 @@ import type { ReactNode } from "react";
 
 const APK_URL =
   import.meta.env.VITE_APK_URL ??
-  "https://github.com/devdattatalele/HDGEcalls-App/releases/latest/download/HDGEcalls-latest.apk";
+  "https://github.com/devdattatalele/HDGEcalls-releases/releases/latest/download/HDGEcalls-latest.apk";
 
 interface Props {
   children: ReactNode;
