@@ -15,15 +15,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
+// Always points at the latest GitHub Release asset (workflow uploads both
+// HDGEcalls-vX.Y.Z.apk and a stable HDGEcalls-latest.apk on every release).
 const APK_URL =
-  import.meta.env.VITE_APK_URL ?? "/app/HDGEcalls-latest.apk";
+  import.meta.env.VITE_APK_URL ??
+  "https://github.com/devdattatalele/HDGEcalls-App/releases/latest/download/HDGEcalls-latest.apk";
 
 const STEPS = [
   {
     icon: Download,
     title: "Get the Android app",
     body: "Download the latest APK and install on every phone you want to capture calls from.",
-    action: { href: APK_URL, label: "Download HDGEcalls v8", external: true },
+    action: { href: APK_URL, label: "Download latest HDGEcalls", external: true },
   },
   {
     icon: UserPlus,
@@ -112,7 +115,7 @@ export function HelpPage() {
                 Step 0 · Install the Android app
               </div>
               <h1 className="mt-2 text-2xl font-bold leading-tight tracking-tight">
-                HDGEcalls v0.2.0
+                HDGEcalls — latest
               </h1>
               <p className="mt-2 max-w-md text-sm text-muted-foreground">
                 Side-load this APK on each team member's phone. After signing in once
