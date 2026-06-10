@@ -19,4 +19,4 @@ export const supabase = createClient(url, anonKey, {
 
 export const SIGNED_URL_TTL_SECONDS = 60 * 10;
 export const APK_URL =
-  import.meta.env.VITE_APK_URL ?? "https://hdgelabs.com/downloads/hdgecalls.apk";
+  import.meta.env.VITE_APK_URL ?? "https://calls.hdgelabs.com/app/HDGEcalls-latest.apk";

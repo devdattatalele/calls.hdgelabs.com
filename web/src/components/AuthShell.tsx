@@ -4,7 +4,7 @@ import { SetupSteps } from "@/components/SetupSteps";
 import type { ReactNode } from "react";
 
 const APK_URL =
-  import.meta.env.VITE_APK_URL ?? "/downloads/HDGEcalls-0.2.0.apk";
+  import.meta.env.VITE_APK_URL ?? "/app/HDGEcalls-latest.apk";
 
 interface Props {
   children: ReactNode;

@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 
 const APK_URL =
-  import.meta.env.VITE_APK_URL ?? "/downloads/HDGEcalls-v8.apk";
+  import.meta.env.VITE_APK_URL ?? "/app/HDGEcalls-latest.apk";
 
 const STEPS = [
   {

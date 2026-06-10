@@ -1,0 +1,6 @@
+{
+  "version": "0.3.0",
+  "apk_url": "https://calls.hdgelabs.com/app/HDGEcalls-latest.apk",
+  "release_page_url": "https://calls.hdgelabs.com/app/HDGEcalls-latest.apk",
+  "release_notes": "Bootstrap release: in-app auto-updates, MIUI/Oppo/Vivo recording-folder support, transcript view, scrubber, share-intent fixes."
+}
